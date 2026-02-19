@@ -5,12 +5,15 @@ import os
 import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify
 from src.db import init_db, get_predictions, get_predictions_with_results
 from src.predictor import predict_today
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 app = Flask(__name__)
+
+# US Eastern timezone (UTC-5, or UTC-4 during DST)
+ET = timezone(timedelta(hours=-5))
 
 
 @app.before_request
@@ -20,7 +23,7 @@ def setup():
 
 @app.route("/")
 def index():
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now(ET).strftime("%Y-%m-%d")
     predictions = get_predictions(today)
     if not predictions:
         try:
@@ -181,6 +184,33 @@ def performance():
 @app.route("/methodology")
 def methodology():
     return render_template("methodology.html")
+
+
+@app.route("/debug")
+def debug():
+    """Temporary debug endpoint to diagnose Render issues."""
+    import sqlite3
+    from config import DB_PATH
+    info = {
+        "now_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
+        "now_et": datetime.now(ET).strftime("%Y-%m-%d %H:%M:%S"),
+        "today_used": datetime.now(ET).strftime("%Y-%m-%d"),
+        "db_path": DB_PATH,
+        "db_exists": os.path.exists(DB_PATH),
+        "db_size": os.path.getsize(DB_PATH) if os.path.exists(DB_PATH) else 0,
+    }
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        row = conn.execute("SELECT COUNT(*) FROM predictions").fetchone()
+        info["total_predictions"] = row[0]
+        row = conn.execute("SELECT game_date, COUNT(*) as cnt FROM predictions GROUP BY game_date ORDER BY game_date DESC LIMIT 5").fetchall()
+        info["prediction_dates"] = [{"date": r[0], "count": r[1]} for r in row]
+        row = conn.execute("SELECT COUNT(*) FROM game_logs").fetchone()
+        info["total_game_logs"] = row[0]
+        conn.close()
+    except Exception as e:
+        info["db_error"] = str(e)
+    return jsonify(info)
 
 
 if __name__ == "__main__":
