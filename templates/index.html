@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Today's Picks - NBA Predictor{% endblock %}
+
+{% block content %}
+<h1>Today's Picks</h1>
+<p><small>{{ date }}</small></p>
+
+{% if not predictions %}
+<article>
+    <p>No games scheduled today, or predictions haven't been generated yet.</p>
+</article>
+{% endif %}
+
+{% for p in predictions %}
+<article>
+    <div class="grid">
+        <div>
+            <h3>{{ p.away_team_abbr }} @ {{ p.home_team_abbr }}</h3>
+            <p class="pick-label">
+                Pick: <strong class="pick">{{ p.pick }}</strong>
+                <span class="confidence">({{ (p.pick_confidence * 100)|round(0)|int }}%)</span>
+            </p>
+        </div>
+        <div>
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Model</th>
+                        <th>Vegas</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Spread</td>
+                        <td>{{ p.spread_display }}</td>
+                        <td>{{ p.vegas_spread_display }}</td>
+                    </tr>
+                    <tr>
+                        <td>O/U</td>
+                        <td>{{ p.total_display }}</td>
+                        <td>{{ p.vegas_total_display }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <small>
+                Elo: {{ p.home_team_abbr }} {{ p.home_elo|round(0)|int }}
+                / {{ p.away_team_abbr }} {{ p.away_elo|round(0)|int }}
+            </small>
+            {% if p.home_injuries %}
+            <br><small>Injuries ({{ p.home_team_abbr }}): {{ p.home_injuries }}</small>
+            {% endif %}
+            {% if p.away_injuries %}
+            <br><small>Injuries ({{ p.away_team_abbr }}): {{ p.away_injuries }}</small>
+            {% endif %}
+        </div>
+    </div>
+</article>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Performance - NBA Predictor{% endblock %}
+
+{% block content %}
+<h1>Model Performance</h1>
+
+{% if not stats %}
+<article>
+    <p>No completed predictions with results yet. Check back after games finish.</p>
+</article>
+{% else %}
+<div class="grid">
+    <article>
+        <h3>W/L Record</h3>
+        <p class="stat-big">{{ (stats.wl_accuracy * 100)|round(1) }}%</p>
+        <small>{{ stats.wl_correct }} / {{ stats.total_games }} correct</small>
+    </article>
+    <article>
+        <h3>ATS Record</h3>
+        {% if stats.ats_total > 0 %}
+        <p class="stat-big">{{ (stats.ats_pct * 100)|round(1) }}%</p>
+        <small>{{ stats.ats_wins }} / {{ stats.ats_total }}</small>
+        {% else %}
+        <p class="stat-big">N/A</p>
+        <small>No odds data</small>
+        {% endif %}
+    </article>
+    <article>
+        <h3>O/U Record</h3>
+        {% if stats.ou_total > 0 %}
+        <p class="stat-big">{{ (stats.ou_pct * 100)|round(1) }}%</p>
+        <small>{{ stats.ou_wins }} / {{ stats.ou_total }}</small>
+        {% else %}
+        <p class="stat-big">N/A</p>
+        <small>No odds data</small>
+        {% endif %}
+    </article>
+</div>
+
+<h2>Accuracy Over Time</h2>
+<canvas id="accuracyChart" height="100"></canvas>
+
+<h2>Recent Predictions</h2>
+<figure>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Matchup</th>
+            <th>Pick</th>
+            <th>Result</th>
+            <th>Score</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in rows|reverse %}
+        {% if loop.index <= 50 %}
+        <tr>
+            <td>{{ r.game_date }}</td>
+            <td>{{ r.away_team_abbr }} @ {{ r.home_team_abbr }}</td>
+            <td>{{ r.home_team_abbr if r.pred_home_win_prob >= 0.5 else r.away_team_abbr }}</td>
+            <td>
+                {% if (r.pred_home_win_prob >= 0.5) == (r.actual_home_win == 1) %}
+                    <span style="color: var(--pico-color-green-500);">W</span>
+                {% else %}
+                    <span style="color: var(--pico-color-red-500);">L</span>
+                {% endif %}
+            </td>
+            <td>{{ r.away_pts }} - {{ r.home_pts }}</td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </tbody>
+</table>
+</figure>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if cumulative %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+const ctx = document.getElementById('accuracyChart').getContext('2d');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ cumulative|map(attribute='game_num')|list|tojson }},
+        datasets: [{
+            label: 'Cumulative Accuracy %',
+            data: {{ cumulative|map(attribute='accuracy')|list|tojson }},
+            borderColor: '#4ade80',
+            tension: 0.3,
+            pointRadius: 0,
+        }]
+    },
+    options: {
+        scales: {
+            y: { min: 40, max: 80, title: { display: true, text: 'Accuracy %' } },
+            x: { title: { display: true, text: 'Game #' } }
+        },
+        plugins: { legend: { display: false } }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

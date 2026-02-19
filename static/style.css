@@ -1,0 +1,31 @@
+/* NBA Predictor custom styles */
+
+.pick {
+    font-size: 1.3em;
+    color: var(--pico-color-green-500);
+}
+
+.confidence {
+    color: var(--pico-muted-color);
+}
+
+.pick-label {
+    font-size: 1.1em;
+}
+
+.stat-big {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin: 0.2em 0;
+    color: var(--pico-color-green-500);
+}
+
+article {
+    margin-bottom: 1em;
+}
+
+footer {
+    text-align: center;
+    padding: 2em 0;
+    color: var(--pico-muted-color);
+}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Methodology - NBA Predictor{% endblock %}
+
+{% block content %}
+<h1>How It Works</h1>
+
+<article>
+<h2>Data Sources</h2>
+<ul>
+    <li><strong>NBA.com Stats API</strong> (via nba_api) - Historical game logs, team stats, and today's schedule. Data from 2018-19 season onward.</li>
+    <li><strong>The Odds API</strong> - Current Vegas lines (spreads, totals, moneylines) for comparison.</li>
+</ul>
+</article>
+
+<article>
+<h2>Features</h2>
+<p>For each game, we compute features for both the home and away team, then use their <strong>differentials</strong> (home minus away) as model inputs:</p>
+<ul>
+    <li><strong>Rolling Averages (last 10 games)</strong>: Offensive rating, defensive rating, net rating, FG%, 3PT%, FT%, rebounds, assists, turnovers, points scored, points allowed</li>
+    <li><strong>Elo Ratings</strong>: Custom Elo system (K=20, home advantage +100, season carryover) tracking relative team strength</li>
+    <li><strong>Context</strong>: Rest days, back-to-back flag, win streak, season win percentage</li>
+</ul>
+<p>Total: <strong>20 features</strong> per game.</p>
+</article>
+
+<article>
+<h2>Model</h2>
+<p>Three separate <strong>XGBoost</strong> models:</p>
+<ol>
+    <li><strong>Win/Loss Classifier</strong> - Predicts probability of home team winning</li>
+    <li><strong>Spread Regressor</strong> - Predicts home team margin of victory</li>
+    <li><strong>Total Regressor</strong> - Predicts combined score (over/under)</li>
+</ol>
+<p>Trained on ~8,200 NBA regular season games from 2018-19 through 2024-25.</p>
+</article>
+
+<article>
+<h2>Backtesting</h2>
+<p>Validated using <strong>expanding-window cross-validation</strong> (train on seasons 1..N, test on season N+1) to prevent data leakage:</p>
+<table>
+    <thead>
+        <tr><th>Test Season</th><th>W/L Accuracy</th><th>Spread MAE</th><th>Total MAE</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>2021-22</td><td>62.2%</td><td>11.7 pts</td><td>15.8 pts</td></tr>
+        <tr><td>2022-23</td><td>59.3%</td><td>10.7 pts</td><td>15.6 pts</td></tr>
+        <tr><td>2023-24</td><td>62.5%</td><td>11.4 pts</td><td>15.3 pts</td></tr>
+        <tr><td>2024-25</td><td>63.3%</td><td>11.3 pts</td><td>15.2 pts</td></tr>
+        <tr><td><strong>Average</strong></td><td><strong>61.8%</strong></td><td><strong>11.2 pts</strong></td><td><strong>15.5 pts</strong></td></tr>
+    </tbody>
+</table>
+</article>
+
+<article>
+<h2>Limitations</h2>
+<ul>
+    <li>Does not incorporate injury data yet (coming soon)</li>
+    <li>Vegas lines incorporate sharp money and private information we don't have access to</li>
+    <li>Model uses regular season data only; playoff dynamics may differ</li>
+    <li>Predictions are generated once daily and do not update with late-breaking news</li>
+</ul>
+</article>
+{% endblock %}

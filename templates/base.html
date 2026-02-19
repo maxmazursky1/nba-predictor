@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NBA Predictor{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="container">
+        <ul>
+            <li><strong>NBA Predictor</strong></li>
+        </ul>
+        <ul>
+            <li><a href="/">Today's Picks</a></li>
+            <li><a href="/performance">Performance</a></li>
+            <li><a href="/methodology">Methodology</a></li>
+        </ul>
+    </nav>
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="container">
+        <small>Built with XGBoost + nba_api. Not financial advice.</small>
+    </footer>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
