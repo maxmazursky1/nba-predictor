@@ -33,7 +33,7 @@
             <tr>
                 <td>{{ p.away_team_abbr }} @ {{ p.home_team_abbr }}</td>
                 <td><strong class="value-play">{{ p.spread_play }}</strong></td>
-                <td class="edge">{{ p.spread_edge|round(1) }} pts</td>
+                <td class="edge">{{ '%+.1f'|format(p.spread_edge) }} pts</td>
                 <td>{{ p.spread_display }}</td>
                 <td>{{ p.vegas_spread_display }}</td>
             </tr>
@@ -59,7 +59,7 @@
             <tr>
                 <td>{{ p.away_team_abbr }} @ {{ p.home_team_abbr }}</td>
                 <td><strong class="value-play">{{ p.ou_play }}</strong></td>
-                <td class="edge">{{ p.ou_edge|round(1) }} pts</td>
+                <td class="edge">{{ '%+.1f'|format(p.ou_edge) }} pts</td>
                 <td>{{ p.total_display }}</td>
                 <td>{{ p.vegas_total_display }}</td>
             </tr>
@@ -112,11 +112,11 @@
                 Elo: {{ p.home_team_abbr }} {{ p.home_elo|round(0)|int }}
                 / {{ p.away_team_abbr }} {{ p.away_elo|round(0)|int }}
             </small>
-            {% if p.spread_edge %}
-            <br><small>Spread edge: {{ p.spread_edge|round(1) }} pts</small>
+            {% if p.spread_edge is not none %}
+            <br><small>Spread edge: {{ '%+.1f'|format(p.spread_edge) }} pts</small>
             {% endif %}
-            {% if p.ou_edge %}
-            <br><small>O/U edge: {{ p.ou_edge|round(1) }} pts</small>
+            {% if p.ou_edge is not none %}
+            <br><small>O/U edge: {{ '%+.1f'|format(p.ou_edge) }} pts</small>
             {% endif %}
             {% if p.home_injuries %}
             <br><small>Injuries ({{ p.home_team_abbr }}): {{ p.home_injuries }}</small>

@@ -65,36 +65,39 @@ def index():
         else:
             p["vegas_total_display"] = "N/A"
 
-        # Value edge vs Vegas
+        # Value edge vs Vegas (signed: vegas line - model line, for home team)
+        # pred_spread = predicted home margin (positive = home wins by X)
+        # vegas_spread = home spread (negative = home favored, e.g. -8.0)
+        # Model home spread = -pred_spread (e.g. model says home wins by 4.7 → home spread -4.7)
+        # Edge = vegas_spread - (-pred_spread) = vegas_spread + pred_spread
+        # Positive edge → model more bullish on home → play home side
+        # Negative edge → model less bullish on home → play away side
         p["spread_edge"] = None
         p["spread_play"] = None
         p["ou_edge"] = None
         p["ou_play"] = None
         if p.get("vegas_spread") is not None:
-            # pred_spread = predicted home margin (positive = home wins by X)
-            # vegas_spread = home spread (negative = home favored, e.g. -16.5)
-            # Vegas implied home margin = -vegas_spread (e.g. +16.5)
-            vegas_implied_margin = -p["vegas_spread"]
-            p["spread_edge"] = abs(p["pred_spread"] - vegas_implied_margin)
-            if p["pred_spread"] > vegas_implied_margin:
+            edge = p["vegas_spread"] + p["pred_spread"]
+            p["spread_edge"] = round(edge, 1)
+            if edge > 0:
                 # Model more bullish on home — bet home to cover
-                p["spread_play"] = f"{p['home_team_abbr']} {p['vegas_spread']}"
+                p["spread_play"] = f"{p['home_team_abbr']} {p['vegas_spread']:+.1f}"
             else:
-                # Model more bullish on away — bet away to cover
+                # Model less bullish on home — bet away to cover
                 p["spread_play"] = f"{p['away_team_abbr']} {-p['vegas_spread']:+.1f}"
         if p.get("vegas_total") is not None:
-            p["ou_edge"] = abs(p["pred_total"] - p["vegas_total"])
-            p["ou_play"] = "Over" if p["pred_total"] > p["vegas_total"] else "Under"
+            p["ou_edge"] = round(p["pred_total"] - p["vegas_total"], 1)
+            p["ou_play"] = "Over" if p["ou_edge"] > 0 else "Under"
             p["ou_play"] += f" {p['vegas_total']:.0f}"
 
-    # Identify best value plays (spread edge >= 2 pts or O/U edge >= 4 pts)
+    # Identify best value plays (|spread edge| >= 3 pts or |O/U edge| >= 4 pts)
     best_spread_plays = sorted(
-        [p for p in predictions if p["spread_edge"] and p["spread_edge"] >= 2],
-        key=lambda x: -x["spread_edge"]
+        [p for p in predictions if p["spread_edge"] is not None and abs(p["spread_edge"]) >= 3],
+        key=lambda x: -abs(x["spread_edge"])
     )[:5]
     best_ou_plays = sorted(
-        [p for p in predictions if p["ou_edge"] and p["ou_edge"] >= 4],
-        key=lambda x: -x["ou_edge"]
+        [p for p in predictions if p["ou_edge"] is not None and abs(p["ou_edge"]) >= 4],
+        key=lambda x: -abs(x["ou_edge"])
     )[:3]
 
     # Mark them on the predictions
@@ -130,10 +133,12 @@ def performance():
     for r in rows:
         if r.get("vegas_spread") is not None:
             actual_margin = r["home_pts"] - r["away_pts"]
-            vegas_implied = -r["vegas_spread"]
-            # Model picks home to cover if pred margin > vegas implied margin
-            model_covers = r["pred_spread"] > vegas_implied
-            actual_covers = actual_margin > vegas_implied
+            # edge = vegas_spread + pred_spread (positive = model bullish on home)
+            model_edge = r["vegas_spread"] + r["pred_spread"]
+            # Model picks home to cover if edge > 0
+            model_covers = model_edge > 0
+            # Home covers if actual margin > -vegas_spread (i.e. beats the spread)
+            actual_covers = actual_margin > -r["vegas_spread"]
             if model_covers == actual_covers:
                 ats_wins += 1
             ats_total += 1
