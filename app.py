@@ -60,7 +60,53 @@ def index():
         else:
             p["vegas_total_display"] = "N/A"
 
-    return render_template("index.html", predictions=predictions, date=today)
+        # Value edge vs Vegas
+        p["spread_edge"] = None
+        p["spread_play"] = None
+        p["ou_edge"] = None
+        p["ou_play"] = None
+        if p.get("vegas_spread") is not None:
+            # Model spread is home margin; vegas_spread is home spread (negative = favored)
+            # Edge = how much the model disagrees in absolute terms
+            p["spread_edge"] = abs(p["pred_spread"] - p["vegas_spread"])
+            # The play: if model thinks home is better than Vegas does, bet home side
+            if p["pred_spread"] > p["vegas_spread"]:
+                # Model more bullish on home team
+                if p["vegas_spread"] <= 0:
+                    p["spread_play"] = f"{p['home_team_abbr']} {p['vegas_spread']}"
+                else:
+                    p["spread_play"] = f"{p['away_team_abbr']} {-p['vegas_spread']:+.1f}"
+            else:
+                # Model more bullish on away team
+                if p["vegas_spread"] >= 0:
+                    p["spread_play"] = f"{p['away_team_abbr']} {-p['vegas_spread']:+.1f}"
+                else:
+                    p["spread_play"] = f"{p['home_team_abbr']} {p['vegas_spread']}"
+        if p.get("vegas_total") is not None:
+            p["ou_edge"] = abs(p["pred_total"] - p["vegas_total"])
+            p["ou_play"] = "Over" if p["pred_total"] > p["vegas_total"] else "Under"
+            p["ou_play"] += f" {p['vegas_total']:.0f}"
+
+    # Identify best value plays (spread edge >= 5 pts or O/U edge >= 8 pts)
+    best_spread_plays = sorted(
+        [p for p in predictions if p["spread_edge"] and p["spread_edge"] >= 5],
+        key=lambda x: -x["spread_edge"]
+    )[:5]
+    best_ou_plays = sorted(
+        [p for p in predictions if p["ou_edge"] and p["ou_edge"] >= 8],
+        key=lambda x: -x["ou_edge"]
+    )[:3]
+
+    # Mark them on the predictions
+    best_game_ids = set()
+    for p in best_spread_plays + best_ou_plays:
+        best_game_ids.add(p["game_id"])
+    for p in predictions:
+        p["is_value_play"] = p["game_id"] in best_game_ids
+
+    return render_template("index.html", predictions=predictions, date=today,
+                           best_spread_plays=best_spread_plays,
+                           best_ou_plays=best_ou_plays)
 
 
 @app.route("/performance")

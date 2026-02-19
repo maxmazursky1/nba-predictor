@@ -11,11 +11,74 @@
 </article>
 {% endif %}
 
+{% if best_spread_plays or best_ou_plays %}
+<article class="value-section">
+    <h2>Best Value Plays</h2>
+    <p><small>Where our model disagrees most with Vegas — potential edges.</small></p>
+
+    {% if best_spread_plays %}
+    <h3>Spread</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Game</th>
+                <th>Play</th>
+                <th>Edge</th>
+                <th>Model Spread</th>
+                <th>Vegas Spread</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in best_spread_plays %}
+            <tr>
+                <td>{{ p.away_team_abbr }} @ {{ p.home_team_abbr }}</td>
+                <td><strong class="value-play">{{ p.spread_play }}</strong></td>
+                <td class="edge">{{ p.spread_edge|round(1) }} pts</td>
+                <td>{{ p.spread_display }}</td>
+                <td>{{ p.vegas_spread_display }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+
+    {% if best_ou_plays %}
+    <h3>Over/Under</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Game</th>
+                <th>Play</th>
+                <th>Edge</th>
+                <th>Model Total</th>
+                <th>Vegas Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in best_ou_plays %}
+            <tr>
+                <td>{{ p.away_team_abbr }} @ {{ p.home_team_abbr }}</td>
+                <td><strong class="value-play">{{ p.ou_play }}</strong></td>
+                <td class="edge">{{ p.ou_edge|round(1) }} pts</td>
+                <td>{{ p.total_display }}</td>
+                <td>{{ p.vegas_total_display }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</article>
+{% endif %}
+
+<h2>All Games</h2>
+
 {% for p in predictions %}
-<article>
+<article{% if p.is_value_play %} class="value-highlight"{% endif %}>
     <div class="grid">
         <div>
-            <h3>{{ p.away_team_abbr }} @ {{ p.home_team_abbr }}</h3>
+            <h3>{{ p.away_team_abbr }} @ {{ p.home_team_abbr }}
+                {% if p.is_value_play %}<span class="value-badge">VALUE</span>{% endif %}
+            </h3>
             <p class="pick-label">
                 Pick: <strong class="pick">{{ p.pick }}</strong>
                 <span class="confidence">({{ (p.pick_confidence * 100)|round(0)|int }}%)</span>
@@ -49,6 +112,12 @@
                 Elo: {{ p.home_team_abbr }} {{ p.home_elo|round(0)|int }}
                 / {{ p.away_team_abbr }} {{ p.away_elo|round(0)|int }}
             </small>
+            {% if p.spread_edge %}
+            <br><small>Spread edge: {{ p.spread_edge|round(1) }} pts</small>
+            {% endif %}
+            {% if p.ou_edge %}
+            <br><small>O/U edge: {{ p.ou_edge|round(1) }} pts</small>
+            {% endif %}
             {% if p.home_injuries %}
             <br><small>Injuries ({{ p.home_team_abbr }}): {{ p.home_injuries }}</small>
             {% endif %}

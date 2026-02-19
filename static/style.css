@@ -29,3 +29,38 @@ footer {
     padding: 2em 0;
     color: var(--pico-muted-color);
 }
+
+/* Value plays */
+.value-section {
+    border: 2px solid var(--pico-color-green-500);
+}
+
+.value-section h2 {
+    color: var(--pico-color-green-500);
+}
+
+.value-play {
+    color: var(--pico-color-green-500);
+    font-size: 1.1em;
+}
+
+.edge {
+    color: var(--pico-color-yellow-500);
+    font-weight: bold;
+}
+
+.value-highlight {
+    border-left: 4px solid var(--pico-color-green-500);
+}
+
+.value-badge {
+    font-size: 0.5em;
+    background: var(--pico-color-green-500);
+    color: #000;
+    padding: 0.15em 0.5em;
+    border-radius: 4px;
+    vertical-align: middle;
+    margin-left: 0.5em;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
