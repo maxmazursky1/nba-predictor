@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: nba-predictor
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: THE_ODDS_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.11"
