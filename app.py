@@ -27,6 +27,8 @@ def index():
             predictions = predict_today()
         except Exception as e:
             predictions = []
+            import traceback
+            traceback.print_exc()
             print(f"Prediction error: {e}")
 
     # Enrich predictions for display

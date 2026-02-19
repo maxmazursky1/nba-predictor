@@ -1,7 +1,6 @@
 .env
 __pycache__/
 *.pyc
-data/nba.db
 data/star_players.json
 venv/
 .venv/
