@@ -11,7 +11,7 @@ from src.injury_fetcher import fetch_injuries
 # Adjustment factor: how much missing PPG shifts the spread.
 # A player averaging 25 PPG out doesn't mean -25 pts (backup fills some).
 # Research suggests ~0.5x is reasonable.
-INJURY_PPG_FACTOR = 0.5
+INJURY_PPG_FACTOR = 0.20
 
 # Cache player stats for the session
 _player_cache = None
