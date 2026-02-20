@@ -15,6 +15,7 @@ from src.data_fetcher import fetch_todays_scoreboard, fetch_season_game_logs, NB
 from src.elo import EloSystem
 from src.model import load_models, predict_game
 from src.odds_fetcher import fetch_nba_odds
+from src.injury_fetcher import fetch_injuries, format_injuries_short
 
 
 def _compute_team_rolling(team_id, before_date):
@@ -103,6 +104,10 @@ def predict_today():
     print("Fetching odds...")
     odds = fetch_nba_odds()
 
+    # Fetch injuries
+    print("Fetching injuries...")
+    injuries = fetch_injuries()
+
     from src.feature_engineer import get_feature_names
     feature_names = get_feature_names()
 
@@ -169,8 +174,8 @@ def predict_today():
             "vegas_total": game_odds.get("total"),
             "vegas_home_ml": game_odds.get("home_ml"),
             "vegas_away_ml": game_odds.get("away_ml"),
-            "home_injuries": "",
-            "away_injuries": "",
+            "home_injuries": format_injuries_short(injuries.get(game["home_team_abbr"], [])),
+            "away_injuries": format_injuries_short(injuries.get(game["away_team_abbr"], [])),
             "home_elo": round(home_elo, 1),
             "away_elo": round(away_elo, 1),
         }
