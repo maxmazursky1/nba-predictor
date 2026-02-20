@@ -16,6 +16,7 @@ from src.elo import EloSystem
 from src.model import load_models, predict_game
 from src.odds_fetcher import fetch_nba_odds
 from src.injury_fetcher import fetch_injuries, format_injuries_short
+from src.injury_adjuster import compute_injury_adjustment
 
 
 def _compute_team_rolling(team_id, before_date):
@@ -154,6 +155,22 @@ def predict_today():
         # Predict
         pred = predict_game(win_model, spread_model, total_model, features)
 
+        # Adjust for injuries
+        inj_adj = compute_injury_adjustment(
+            game["home_team_abbr"], game["away_team_abbr"], injuries)
+        adj = inj_adj["adjustment"]
+        raw_spread = pred["spread"]
+        adjusted_spread = raw_spread + adj
+
+        # Adjust win probability based on new spread
+        # Rough conversion: each point of spread ~ 3% win probability
+        raw_prob = pred["home_win_prob"]
+        adjusted_prob = min(0.99, max(0.01, raw_prob + adj * 0.03))
+
+        # Adjust total: missing scorers reduce total
+        total_adj = -(inj_adj["home_missing_ppg"] + inj_adj["away_missing_ppg"]) * 0.3
+        adjusted_total = pred["total"] + total_adj
+
         # Match odds
         home_full = NBA_TEAMS.get(home_id, {}).get("full_name", game["home_team_abbr"])
         away_full = NBA_TEAMS.get(away_id, {}).get("full_name", game["away_team_abbr"])
@@ -167,9 +184,9 @@ def predict_today():
             "away_team_id": away_id,
             "home_team_abbr": game["home_team_abbr"],
             "away_team_abbr": game["away_team_abbr"],
-            "pred_home_win_prob": pred["home_win_prob"],
-            "pred_spread": pred["spread"],
-            "pred_total": pred["total"],
+            "pred_home_win_prob": adjusted_prob,
+            "pred_spread": round(adjusted_spread, 1),
+            "pred_total": round(adjusted_total, 0),
             "vegas_spread": game_odds.get("spread"),
             "vegas_total": game_odds.get("total"),
             "vegas_home_ml": game_odds.get("home_ml"),
@@ -183,9 +200,13 @@ def predict_today():
         insert_prediction(prediction)
         predictions.append(prediction)
 
-        winner = game["home_team_abbr"] if pred["home_win_prob"] > 0.5 else game["away_team_abbr"]
-        conf = max(pred["home_win_prob"], 1 - pred["home_win_prob"])
+        winner = game["home_team_abbr"] if adjusted_prob > 0.5 else game["away_team_abbr"]
+        conf = max(adjusted_prob, 1 - adjusted_prob)
+        inj_tag = ""
+        if adj != 0:
+            inj_tag = f" [inj adj: {adj:+.1f}, H missing {inj_adj['home_missing_ppg']}ppg, A missing {inj_adj['away_missing_ppg']}ppg]"
         print(f"  {game['away_team_abbr']} @ {game['home_team_abbr']}: "
-              f"{winner} ({conf:.0%}) | Spread: {pred['spread']:+.1f} | O/U: {pred['total']:.0f}")
+              f"{winner} ({conf:.0%}) | Spread: {adjusted_spread:+.1f} (raw {raw_spread:+.1f})"
+              f" | O/U: {adjusted_total:.0f}{inj_tag}")
 
     return predictions
